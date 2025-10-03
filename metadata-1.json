@@ -1,0 +1,5 @@
+{
+  "name": " Imendi version 4",
+  "description": "A PWA for generating and managing shipping receipts with offline support and data synchronization.",
+  "requestFramePermissions": []
+}

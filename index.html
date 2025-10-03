@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>IMENDI TRANS - Gestion des Bons</title>
+
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json" />
+    <meta name="theme-color" content="#1E3A8A" />
+    <link rel="apple-touch-icon" href="icon-192.png">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="index.css" />
+<script type="importmap">
+{
+  "imports": {
+    "jspdf": "https://aistudiocdn.com/jspdf@^3.0.3",
+    "html2canvas": "https://aistudiocdn.com/html2canvas@^1.4.1",
+    "@supabase/supabase-js": "https://aistudiocdn.com/@supabase/supabase-js@^2.58.0",
+    "url": "https://aistudiocdn.com/url@^0.11.4",
+    "vite": "https://aistudiocdn.com/vite@^7.1.9"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body class="bg-gray-100 font-['Inter'] text-gray-800 antialiased">
+    <!-- Offline Status Indicator -->
+    <div id="offline-indicator" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; background-color: #EF4444; color: white; padding: 8px; text-align: center; z-index: 10000; font-weight: 500;">
+      Vous êtes hors ligne. Les modifications sont enregistrées localement.
+    </div>
+    
+    <!-- Auth Container -->
+    <div id="auth-container" class="auth-container">
+        <!-- Login Page -->
+        <div id="login-page" class="auth-page active">
+            <div class="auth-card">
+                <h2 class="auth-title">IMENDI TRANS</h2>
+                <p class="auth-subtitle">Connectez-vous à votre compte</p>
+                <form id="login-form">
+                    <div id="login-error" class="auth-error hidden"></div>
+                    <div>
+                        <label for="login-email">Email</label>
+                        <input type="email" id="login-email" required autocomplete="email" />
+                    </div>
+                    <div>
+                        <label for="login-password">Mot de passe</label>
+                        <input type="password" id="login-password" required autocomplete="current-password" />
+                    </div>
+                    <button type="submit" class="btn btn-primary w-full">Se connecter</button>
+                </form>
+                <div class="auth-switch">
+                    Pas de compte ? <a href="#" id="show-register">S'inscrire</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Register Page -->
+        <div id="register-page" class="auth-page">
+            <div class="auth-card">
+                <h2 class="auth-title">Créer un compte</h2>
+                <p class="auth-subtitle">Rejoignez la plateforme IMENDI TRANS</p>
+                <form id="register-form">
+                    <div id="register-error" class="auth-error hidden"></div>
+                    <div id="register-success" class="auth-success hidden"></div>
+                    <div>
+                        <label for="register-email">Email</label>
+                        <input type="email" id="register-email" required autocomplete="email" />
+                    </div>
+                    <div>
+                        <label for="register-password">Mot de passe</label>
+                        <input type="password" id="register-password" required autocomplete="new-password" />
+                    </div>
+                    <button type="submit" class="btn btn-primary w-full">S'inscrire</button>
+                </form>
+                <div class="auth-switch">
+                    Déjà un compte ? <a href="#" id="show-login">Se connecter</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <header class="header hidden">
+      <div class="header-content">
+        <h1 class="logo">IMENDI TRANS</h1>
+        <nav class="navigation" id="main-nav">
+          <a href="#dashboard" class="nav-link active" data-page="dashboard">Dashboard</a>
+          <a href="#new" class="nav-link" data-page="new">Nouveau Bon</a>
+          <a href="#history" class="nav-link" data-page="history">Historique</a>
+          <a href="#stats" class="nav-link" data-page="stats">Statistiques</a>
+          <a href="#settings" class="nav-link" data-page="settings">Paramètres</a>
+          <a href="#" class="nav-link" id="logout-button">Déconnexion</a>
+        </nav>
+        <button id="mobile-menu-button" class="mobile-menu-button" aria-label="Ouvrir le menu" aria-expanded="false" aria-controls="main-nav">
+            <span class="hamburger-bar"></span>
+            <span class="hamburger-bar"></span>
+            <span class="hamburger-bar"></span>
+        </button>
+      </div>
+    </header>
+
+    <main id="app-root" class="app-container hidden" role="main">
+      <!-- Dashboard Page -->
+      <section id="dashboard-page" class="page active">
+        <div class="page-header">
+            <h2 class="page-title">Tableau de bord</h2>
+            <p class="page-subtitle" id="dashboard-welcome">Bienvenue. Voici un résumé de vos activités récentes.</p>
+        </div>
+        <div class="dashboard-grid">
+            <div class="dashboard-card">
+                <h3 class="card-title">Bons Récents</h3>
+                <div id="recent-bons-list" class="space-y-3">
+                    <!-- Recent bons will be dynamically inserted here -->
+                </div>
+            </div>
+            <div class="dashboard-card quick-actions">
+                <h3 class="card-title">Actions Rapides</h3>
+                <button id="dashboard-new-bon-btn" class="btn btn-primary w-full" data-page-link="new">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    <span>Créer un nouveau bon</span>
+                </button>
+            </div>
+        </div>
+      </section>
+
+      <!-- New Bon Page -->
+      <section id="new-page" class="page">
+         <div class="page-header">
+            <h2 class="page-title" id="new-page-title">Créer un nouveau bon d'expédition</h2>
+            <p class="page-subtitle" id="new-page-subtitle">Remplissez les informations ci-dessous pour générer un reçu digital.</p>
+        </div>
+        <form id="bon-form" class="form-container">
+            <div class="form-section">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="bon-id">Numéro de Bon</label>
+                        <input type="text" id="bon-id" name="id" readonly />
+                    </div>
+                     <div>
+                        <label for="bon-date">Date de création</label>
+                        <input type="text" id="bon-date" name="createdAt" readonly />
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sender/Recipient -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="form-section">
+                    <h3 class="section-title">Expéditeur</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div><label for="sender-firstName">Prénom</label><input type="text" id="sender-firstName" name="sender.firstName" required /></div>
+                        <div><label for="sender-lastName">Nom</label><input type="text" id="sender-lastName" name="sender.lastName" required /></div>
+                        <div><label for="sender-phone">Téléphone</label><input type="tel" id="sender-phone" name="sender.phone" required /></div>
+                        <div><label for="sender-cin">CIN</label><input type="text" id="sender-cin" name="sender.cin" required /></div>
+                    </div>
+                </div>
+                <div class="form-section">
+                    <h3 class="section-title">Destinataire</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div><label for="recipient-firstName">Prénom</label><input type="text" id="recipient-firstName" name="recipient.firstName" required /></div>
+                        <div><label for="recipient-lastName">Nom</label><input type="text" id="recipient-lastName" name="recipient.lastName" required /></div>
+                        <div><label for="recipient-phone">Téléphone</label><input type="tel" id="recipient-phone" name="recipient.phone" required /></div>
+                        <div><label for="recipient-cin">CIN</label><input type="text" id="recipient-cin" name="recipient.cin" required /></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Route -->
+             <div class="form-section">
+                <h3 class="section-title">Trajet</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div><label for="origin">Ville d'envoi</label><input type="text" id="origin" name="origin" required /></div>
+                    <div><label for="destination">Ville de destination</label><input type="text" id="destination" name="destination" required /></div>
+                </div>
+            </div>
+
+            <!-- Luggage -->
+            <div class="form-section">
+                <h3 class="section-title">Contenu des bagages</h3>
+                <div id="luggage-items" class="space-y-2">
+                    <!-- Luggage items will be dynamically inserted here -->
+                </div>
+                <button type="button" id="add-luggage-item" class="btn btn-secondary mt-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    <span>Ajouter un article</span>
+                </button>
+            </div>
+
+            <!-- Total Price -->
+            <div class="form-section">
+                <h3 class="section-title">Montant Total</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                   <div>
+                        <label for="bon-total">Total à payer (€)</label>
+                        <input type="number" id="bon-total" name="total" step="0.01" placeholder="ex: 150.50" required />
+                    </div>
+                    <div>
+                        <label>Statut du paiement</label>
+                        <div class="flex items-center h-full gap-2">
+                            <input type="checkbox" id="bon-paid" name="paid" class="h-5 w-5" />
+                            <label for="bon-paid" class="mb-0">Payé</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-actions">
+                <button type="submit" id="form-submit-button" class="btn btn-primary">Enregistrer le Bon</button>
+            </div>
+        </form>
+      </section>
+
+      <!-- History Page -->
+      <section id="history-page" class="page">
+        <div class="page-header">
+            <h2 class="page-title">Historique des bons</h2>
+            <p class="page-subtitle">Recherchez, consultez et exportez les bons d'expédition.</p>
+        </div>
+        <div class="history-controls">
+            <input type="search" id="search-history" placeholder="Rechercher par n° de bon, nom, téléphone..." />
+        </div>
+        <div class="table-container">
+            <table class="history-table">
+                <thead>
+                    <tr>
+                        <th>N° de Bon</th>
+                        <th>Date</th>
+                        <th>Expéditeur</th>
+                        <th>Destinataire</th>
+                        <th>Destination</th>
+                        <th>Total</th>
+                        <th>Statut</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="history-table-body">
+                    <!-- History items will be dynamically inserted here -->
+                </tbody>
+            </table>
+            <div id="history-no-results" class="hidden p-8 text-center text-gray-500">
+                Aucun bon trouvé.
+            </div>
+        </div>
+      </section>
+
+      <!-- Stats Page -->
+      <section id="stats-page" class="page">
+        <div class="page-header">
+            <h2 class="page-title">Statistiques</h2>
+            <p class="page-subtitle">Analysez vos revenus et activités sur une période donnée.</p>
+        </div>
+        <div class="stats-filters">
+            <div>
+                <label for="stats-start-date">Date de début</label>
+                <input type="date" id="stats-start-date" />
+            </div>
+            <div>
+                <label for="stats-end-date">Date de fin</label>
+                <input type="date" id="stats-end-date" />
+            </div>
+        </div>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3 class="stat-title">Revenu Total</h3>
+                <p class="stat-value" id="stats-total-revenue">0.00 €</p>
+                <p class="stat-desc" id="stats-total-bons">0 bons</p>
+            </div>
+            <div class="stat-card">
+                <h3 class="stat-title">Total Payé</h3>
+                <p class="stat-value text-green-600" id="stats-paid-amount">0.00 €</p>
+                <p class="stat-desc" id="stats-paid-count">0 bons</p>
+            </div>
+            <div class="stat-card">
+                <h3 class="stat-title">Total Non Payé</h3>
+                <p class="stat-value text-red-500" id="stats-unpaid-amount">0.00 €</p>
+                <p class="stat-desc" id="stats-unpaid-count">0 bons</p>
+            </div>
+        </div>
+      </section>
+
+      <!-- Settings Page -->
+      <section id="settings-page" class="page">
+        <div class="page-header">
+            <h2 class="page-title">Paramètres</h2>
+            <p class="page-subtitle">Configurez les paramètres de l'application.</p>
+        </div>
+        <div class="form-container max-w-2xl mx-auto">
+            <form id="settings-form">
+                <div class="space-y-4">
+                    <div>
+                        <label for="setting-bon-start-number">Numéro de départ des bons</label>
+                        <input type="number" id="setting-bon-start-number" min="1" step="1" required class="w-full" />
+                        <p class="text-sm text-gray-500 mt-1">Définit le numéro de départ pour les nouveaux bons (ex: 1000). Ce numéro sera utilisé uniquement s'il est supérieur au dernier numéro de bon déjà créé cette année.</p>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Enregistrer les Paramètres</button>
+                </div>
+            </form>
+        </div>
+      </section>
+    </main>
+
+    <!-- PDF Template (hidden) -->
+    <div id="pdf-template-container" style="position: absolute; left: -9999px; top: -9999px; width: 800px; padding: 20px; background: white; font-family: 'Inter', sans-serif;"></div>
+    
+    <script type="module" src="index.tsx"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(registration => {
+                        console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                    })
+                    .catch(err => {
+                        console.log('ServiceWorker registration failed: ', err);
+                    });
+            });
+        }
+    </script>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>

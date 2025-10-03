@@ -1,0 +1,21 @@
+{
+  "name": "IMENDI TRANS",
+  "short_name": "ImendiTrans",
+  "description": "Gestion des Bons d'expédition, même hors ligne.",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#F3F4F6",
+  "theme_color": "#1E3A8A",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ]
+}
